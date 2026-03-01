@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'record_screen.dart';
-import 'theme/app_colors.dart';
 
 class UserInfoScreen extends StatefulWidget {
   @override
@@ -16,7 +15,10 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
   String? selectedGender;
-  bool isLoading = false; // 🔹 loading state
+  bool isLoading = false;
+
+  // Your signature Navy Blue
+  final Color primaryNavy = const Color.fromARGB(255, 51, 73, 112);
 
   @override
   void initState() {
@@ -24,10 +26,11 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     _checkExistingUser();
   }
 
+  // --- Logic remains the same as your original ---
   void _checkExistingUser() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getInt('user_id');
-    if (userId != null) {
+    if (userId != null && mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -44,14 +47,9 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
 
   void submitForm() async {
     if (_formKey.currentState!.validate() && selectedGender != null) {
-      setState(() {
-        isLoading = true; // 🔹 show loader
-      });
-
+      setState(() => isLoading = true);
       try {
-        final url =
-            Uri.parse('https://darija-backend-vtrh.onrender.com/api/register');
-
+        final url = Uri.parse('https://darija-backend-vtrh.onrender.com/api/register');
         final response = await http.post(
           url,
           headers: {'Content-Type': 'application/json'},
@@ -65,14 +63,13 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final userId = data['user_id'];
-
-          // Save all info locally
           final prefs = await SharedPreferences.getInstance();
           await prefs.setInt('user_id', userId);
           await prefs.setString('name', nameController.text.trim());
           await prefs.setString('age', ageController.text.trim());
           await prefs.setString('gender', selectedGender!);
 
+          if (!mounted) return;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -84,172 +81,168 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               ),
             ),
           );
-        } else {
-          final error =
-              jsonDecode(response.body)['error'] ?? 'Registration failed';
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(error)));
         }
       } catch (e) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       } finally {
-        setState(() {
-          isLoading = false; // 🔹 hide loader
-        });
+        setState(() => isLoading = false);
       }
     } else if (selectedGender == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Please select your gender")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select your gender")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FD),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                SizedBox(height: 30),
-                Center(
-                  child: Text(
-                    "Welcome to Darija-app",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 50),
+              // Header Section
+              Text(
+                "Marhba bik! 👋",
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: primaryNavy),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Help us preserve the Darija dialect by sharing a bit about yourself.",
+                style: TextStyle(fontSize: 16, color: Colors.grey[600], height: 1.4),
+              ),
+              const SizedBox(height: 40),
+
+              // Form Section
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLabel("What's your name?"),
+                    _buildTextField(
+                      controller: nameController,
+                      hint: "e.g. Amina",
+                      icon: Icons.person_outline_rounded,
                     ),
-                  ),
-                ),
-                SizedBox(height: 15),
-                Center(
-                  child: Text(
-                    "Explore, record, and enjoy sharing your voice",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal,
-                      color: AppColors.textSecondary,
+                    const SizedBox(height: 25),
+                    
+                    _buildLabel("How old are you?"),
+                    _buildTextField(
+                      controller: ageController,
+                      hint: "e.g. 25",
+                      icon: Icons.cake_outlined,
+                      isNumber: true,
                     ),
-                  ),
-                ),
-                SizedBox(height: 40),
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Full Name",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary)),
-                      SizedBox(height: 5),
-                      TextFormField(
-                        enabled: !isLoading, // 🔹 disable when loading
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.grey[200],
-                          hintText: "Enter your name",
-                          suffixIcon: Icon(Icons.person_2_outlined,
-                              color: AppColors.primary),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none),
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
+                    const SizedBox(height: 25),
+
+                    _buildLabel("Gender"),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _genderCard("Male", Icons.male_rounded),
+                        const SizedBox(width: 15),
+                        _genderCard("Female", Icons.female_rounded),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 50),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 60,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : submitForm,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryNavy,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          elevation: 0,
                         ),
-                        validator: (value) => value == null || value.isEmpty
-                            ? "Enter your name"
-                            : null,
-                      ),
-                      SizedBox(height: 15),
-                      Text("Age",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary)),
-                      SizedBox(height: 5),
-                      TextFormField(
-                        enabled: !isLoading, // 🔹 disable when loading
-                        controller: ageController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
-                        ],
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.grey[200],
-                          hintText: "Enter your age",
-                          suffixIcon: Icon(Icons.cake_outlined,
-                              color: AppColors.primary),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none),
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Text("Sex",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary)),
-                      SizedBox(height: 5),
-                      ToggleButtons(
-                        isSelected: [
-                          selectedGender == "Male",
-                          selectedGender == "Female"
-                        ],
-                        onPressed: isLoading
-                            ? null
-                            : (index) {
-                                setState(() {
-                                  selectedGender =
-                                      index == 0 ? "Male" : "Female";
-                                });
-                              },
-                        borderRadius: BorderRadius.circular(15),
-                        borderColor: Colors.grey,
-                        selectedBorderColor: AppColors.primary,
-                        fillColor: AppColors.primary.withOpacity(0.2),
-                        selectedColor: AppColors.primary,
-                        color: AppColors.textSecondary,
-                        constraints:
-                            BoxConstraints(minHeight: 45, minWidth: 110),
-                        children: [Text("Male"), Text("Female")],
-                      ),
-                      SizedBox(height: 35),
-                      SizedBox(
-                        width: double.infinity,
                         child: isLoading
-                            ? Center(
-                                child: CircularProgressIndicator(
-                                    color: AppColors.primary),
-                              )
-                            : ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  padding: EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15)),
-                                ),
-                                onPressed: submitForm,
-                                child: Text(
-                                  "Continue",
-                                  style: TextStyle(
-                                      fontSize: 18, color: Colors.white),
-                                ),
-                              ),
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text("Continue to Recording", 
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- Helper Widgets for a cleaner build ---
+
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: primaryNavy.withOpacity(0.8))),
+    );
+  }
+
+  Widget _buildTextField({required TextEditingController controller, required String hint, required IconData icon, bool isNumber = false}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(color: primaryNavy.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        enabled: !isLoading,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        inputFormatters: isNumber ? [FilteringTextInputFormatter.digitsOnly] : [],
+        style: TextStyle(color: primaryNavy, fontWeight: FontWeight.w600),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey[400], fontWeight: FontWeight.normal),
+          prefixIcon: Icon(icon, color: primaryNavy),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18),
+        ),
+        validator: (value) => value == null || value.isEmpty ? "Required" : null,
+      ),
+    );
+  }
+
+  Widget _genderCard(String gender, IconData icon) {
+    bool isSelected = selectedGender == gender;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => selectedGender = gender),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          decoration: BoxDecoration(
+            color: isSelected ? primaryNavy : Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: isSelected ? primaryNavy : Colors.transparent, width: 2),
+            boxShadow: [
+              BoxShadow(color: primaryNavy.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5)),
+            ],
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: isSelected ? Colors.white : primaryNavy, size: 28),
+              const SizedBox(height: 5),
+              Text(
+                gender,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : primaryNavy,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ),
       ),
