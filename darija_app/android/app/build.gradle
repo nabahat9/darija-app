@@ -1,5 +1,8 @@
 plugins {
     id "com.android.application"
+    // START: FlutterFire Configuration
+    id 'com.google.gms.google-services'
+    // END: FlutterFire Configuration
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
 }
@@ -25,15 +28,14 @@ if (flutterVersionName == null) {
 android {
     namespace = "com.example.darija_app"
 
-    // ✅ Use stable SDK 33
-    compileSdk = 33
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
         applicationId = "com.example.darija_app"
 
-        minSdk = 21
-        targetSdk = 33
+        minSdk = 23
+        targetSdk = 35
 
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
